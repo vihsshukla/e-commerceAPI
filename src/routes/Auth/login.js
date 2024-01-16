@@ -27,7 +27,7 @@ router.use((req,res,next)=>{
 router.get('/',(req,res)=>{
     try{
         const token=jwt.create(req.body,'Secret_string');
-        token.setExpiration(new Date().getTime() + 60*1000);
+        token.setExpiration(new Date().getTime() + 60*5*1000);
         res.json({token:token.compact()});
     }catch(err){
         res.status(500).json({status:err.message});
