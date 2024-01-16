@@ -5,6 +5,8 @@ const app=express();
 
 const PORT=process.env.PORT || 3000;
 
+app.use(express.json());
+
 app.get('/',(req,res)=>{
     res.send("Hello I am e-commerce api let me know what to do");
 })
