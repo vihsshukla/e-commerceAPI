@@ -3,6 +3,7 @@ const jwt=require('njwt');
 const queryRunner = require('../../utils/queryRunner');
 const { listSellerQuery, catalogQuery, getBuyerIDQuery, createOrderQuery } = require('./dto/dto');
 const { SECRET } = require('../../Constants/constants');
+const queryFormatter = require('../../utils/queryFormatter');
 
 const router=express.Router();
 
@@ -29,7 +30,7 @@ router.get('/list-of-sellers',(req,res)=>{
         }
     })
     .catch((err)=>{
-        res.status(500).json({status:err.message});
+        res.status(500).json({error:err.message});
     })
 });
 
@@ -43,7 +44,7 @@ router.get('/seller-catalog/:seller_id',(req,res)=>{
         }
     })
     .catch((err)=>{
-        res.status(500).json({status:err.message});
+        res.status(500).json({error:err.message});
     });
 })
 
@@ -57,24 +58,25 @@ router.post('/create-order/:seller_id',(req,res,next)=>{
             }
         })
         .catch((err)=>{
-            res.status(500).json({status:err.message});
+            res.status(500).json({error:err.message});
         })
     },
-    (req,res)=>{
+    async(req,res)=>{
         const sellerid=req.params.seller_id;
         const buyerid=req.body.buyerid;
         const products=req.body.products;
+        let query='';
         for(let i=0;i<products.length;i++){
-            queryRunner(createOrderQuery,[products[i],buyerid,sellerid])
-            .then((data)=>{
-                if(data){
-                    res.status(200).json(data);
-                }
-            })
-            .catch((err)=>{
-                res.status(500).json({status:err.message});
-            });
+            query+=await queryFormatter(createOrderQuery,[products[i],buyerid,sellerid]);
         }
-})
+        queryRunner(query,[])
+        .then((data)=>{
+            res.status(200).json({status:"Order Created Successfully."});
+        })
+        .catch((err)=>{
+            res.status(500).json({error:err.message});
+        });
+    }
+)
 
 module.exports=router;
