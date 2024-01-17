@@ -1,6 +1,6 @@
 const express=require('express');
 const jwt=require('njwt');
-const { getSellerIDQuery, createCatalogQuery, createProductQuery } = require('./dto/dto');
+const { getSellerIDQuery, createCatalogQuery, createProductQuery, ordersQuery } = require('./dto/dto');
 const queryRunner = require('../../utils/queryRunner');
 
 const router=express.Router();
@@ -55,6 +55,30 @@ router.post('/create-catalog',(req,res,next)=>{
             })
         }
         res.status(200).json({Status:"Catalog created successfully."});
+    }
+)
+
+router.get('/orders',(req,res,next)=>{
+        const username=req.body.username;
+        queryRunner(getSellerIDQuery,[username])
+        .then((data)=>{
+            if(data.length){
+                req.body.sellerid=data[0]?.id;
+                next();
+            }
+        })
+        .catch((err)=>{
+            res.status(500).json({status:err.message});
+        })
+    },(req,res)=>{
+        const {sellerid}=req.body;
+        queryRunner(ordersQuery,[sellerid])
+        .then((data)=>{
+            res.status(200).json(data);
+        })
+        .catch((err)=>{
+            res.status(500).json({status:err.message});
+        })
     }
 )
 
