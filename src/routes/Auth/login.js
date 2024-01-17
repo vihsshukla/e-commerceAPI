@@ -2,6 +2,7 @@ const express=require('express');
 const jwt=require('njwt');
 const queryRunner = require('../../utils/queryRunner');
 const { loginQuery } = require('./dto/dto');
+const { SECRET, TOKEN_EXPIRATION_TIME } = require('../../Constants/constants');
 
 const router=express.Router();
 
@@ -20,14 +21,13 @@ router.use((req,res,next)=>{
     })
     .catch((err)=>{
         res.status(500).json({status:err.message});
-        next(err.message);
     })
 })
 
 router.post('/',(req,res)=>{
     try{
-        const token=jwt.create(req.body,'Secret_string');
-        token.setExpiration(new Date().getTime() + 60*60*1000);
+        const token=jwt.create(req.body,SECRET);
+        token.setExpiration(new Date().getTime() + TOKEN_EXPIRATION_TIME*1000);
         res.json({token:token.compact()});
     }catch(err){
         res.status(500).json({status:err.message});

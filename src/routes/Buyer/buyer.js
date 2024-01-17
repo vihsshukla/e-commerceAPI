@@ -2,6 +2,7 @@ const express=require('express');
 const jwt=require('njwt');
 const queryRunner = require('../../utils/queryRunner');
 const { listSellerQuery, catalogQuery, getBuyerIDQuery, createOrderQuery } = require('./dto/dto');
+const { SECRET } = require('../../Constants/constants');
 
 const router=express.Router();
 
@@ -9,19 +10,19 @@ router.use((req,res,next)=>{
     
     const token=req.headers?.authorization.split(' ')[1];
 
-    jwt.verify(token, 'Secret_string', (err, jwtVerified) => {
+    jwt.verify(token, SECRET, (err, jwtVerified) => {
         if(err){
             res.status(500).json({error:err.message});
         }else{
             req.body.username=jwtVerified.body.username;
-            console.log(jwtVerified.body.username);
             next();
         }
     });
 });
 
 router.get('/list-of-sellers',(req,res)=>{
-    queryRunner(listSellerQuery)
+    const {first,offset}=req.body;
+    queryRunner(listSellerQuery,[first,offset])
     .then((data)=>{
         if(data){
             res.status(200).json(data);
@@ -30,11 +31,12 @@ router.get('/list-of-sellers',(req,res)=>{
     .catch((err)=>{
         res.status(500).json({status:err.message});
     })
-})
+});
 
 router.get('/seller-catalog/:seller_id',(req,res)=>{
     const sellerid=req.params.seller_id;
-    queryRunner(catalogQuery,[sellerid])
+    const {first,offset}=req.body;
+    queryRunner(catalogQuery,[sellerid,first,offset])
     .then((data)=>{
         if(data){
             res.status(200).json(data);
