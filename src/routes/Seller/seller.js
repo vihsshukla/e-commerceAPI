@@ -1,7 +1,8 @@
 const express=require('express');
 const jwt=require('njwt');
-const { getSellerIDQuery, createCatalogQuery, createProductQuery, ordersQuery } = require('./dto/dto');
+const { getSellerIDQuery, createCatalogQuery, createProductQuery, ordersQuery, checkCatalogQuery } = require('./dto/dto');
 const queryRunner = require('../../utils/queryRunner');
+const queryFormatter = require('../../utils/queryFormatter');
 
 const router=express.Router();
 
@@ -14,7 +15,6 @@ router.use((req,res,next)=>{
             res.status(500).json({error:err.message});
         }else{
             req.body.username=jwtVerified.body.username;
-            console.log(jwtVerified.body.username);
             next();
         }
     });
@@ -30,31 +30,39 @@ router.post('/create-catalog',(req,res,next)=>{
             }
         })
         .catch((err)=>{
-            res.status(500).json({status:err.message});
+            res.status(500).json({error:err.message});
         })
     },(req,res,next)=>{
         const {sellerid,catalogName}=req.body;
-        queryRunner(createCatalogQuery,[catalogName,sellerid])
+        queryRunner(checkCatalogQuery,[catalogName,sellerid])
         .then((data)=>{
-            console.log(data);
-            req.body.catalogid=data[0]?.id;
-            next();
-        })
-        .catch((err)=>{
-            res.status(500).json({status:err.message});
+            if(data.length){
+                req.body.catalogid=data[0]?.id;
+                next();
+            }else{
+                queryRunner(createCatalogQuery,[catalogName,sellerid])
+                .then((data)=>{
+                    req.body.catalogid=data[0]?.id;
+                    next();
+                })
+                .catch((err)=>{
+                    res.status(500).json({error:err.message});
+                });
+            }
         })
     },(req,res)=>{
         const {catalogid,items}=req.body;
+        let query='';
         for(const item of items){
-            queryRunner(createProductQuery,[item.name,item.price,catalogid])
-            .then((data)=>{
-                console.log(data);
-            })
-            .catch((err)=>{
-                res.status(500).json({status:err.message});
-            })
+            query+=queryFormatter(createProductQuery,[item.name,item.price,catalogid]);
         }
-        res.status(200).json({Status:"Catalog created successfully."});
+        queryRunner(query,[])
+        .then(()=>{
+            res.status(200).json({Status:"Catalog created successfully."});
+        })
+        .catch((err)=>{
+            res.status(500).json({error:err.message});
+        })
     }
 )
 
