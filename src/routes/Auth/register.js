@@ -4,7 +4,7 @@ const { registerQuery } = require('./dto/dto');
 
 const router=express.Router();
 
-router.get('/',(req,res)=>{
+router.post('/',(req,res)=>{
     console.log(req.body);
     const {username,password,userType}=req.body;
 
